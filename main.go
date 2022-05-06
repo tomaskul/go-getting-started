@@ -1,8 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
+
+	"github.com/tomaskul/go-getting-started/controllers"
 )
 
 func main() {
@@ -10,23 +12,15 @@ func main() {
 	retries := 3
 	_, err := startWebServer(port, retries)
 	fmt.Println(port, err)
-
-	/*
-		u := models.User{
-			ID:        2,
-			FirstName: "Tricia",
-			LastName:  "McMillan",
-		}
-
-		fmt.Println(u)*/
 }
 
 func startWebServer(port, numberOfRetries int) (int, error) {
 	fmt.Println("Starting web server...")
 	fmt.Println("   Startup retries: ", numberOfRetries)
 
-	return -1, errors.New("something went wrong")
+	controllers.RegisterControllers()
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 
-	//fmt.Println("Web server started. Listening on port: ", port)
-	//return port, nil
+	fmt.Println("Web server started. Listening on port: ", port)
+	return port, nil
 }
