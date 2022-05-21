@@ -11,6 +11,7 @@ func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
 }
 
 func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
+	t.Parallel()
 	_, err := AddUser(User{7, "FirstName", "Lastname"})
 	if err == nil {
 		t.Error("User added when it shouldn't have")
@@ -18,6 +19,7 @@ func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
 }
 
 func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
+	t.Parallel()
 	u, err := AddUser(User{0, "Joe", "Bloggs"})
 
 	if u.ID == 0 && err != nil && len(GetUsers()) != 1 {
@@ -26,6 +28,7 @@ func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
 }
 
 func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
+	t.Parallel()
 	// Arrange.
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
@@ -44,8 +47,8 @@ func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
 	}
 }
 
-// Fails because tests aren't being ran atomically.
 func Test_GetUserById_ValidIdShouldGetUser(t *testing.T) {
+	t.Parallel()
 	// Arrange.
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
