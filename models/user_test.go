@@ -5,6 +5,7 @@ import (
 )
 
 func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
+	t.Parallel()
 	if GetUsers() != nil {
 		t.Error("Found users when none should be present")
 	}
@@ -12,6 +13,7 @@ func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
 
 func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
 	t.Parallel()
+
 	_, err := AddUser(User{7, "FirstName", "Lastname"})
 	if err == nil {
 		t.Error("User added when it shouldn't have")
@@ -20,6 +22,7 @@ func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
 
 func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
 	t.Parallel()
+
 	u, err := AddUser(User{0, "Joe", "Bloggs"})
 
 	if u.ID == 0 && err != nil && len(GetUsers()) != 1 {
@@ -29,6 +32,7 @@ func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
 
 func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
 	t.Parallel()
+
 	// Arrange.
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
@@ -49,6 +53,7 @@ func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
 
 func Test_GetUserById_ValidIdShouldGetUser(t *testing.T) {
 	t.Parallel()
+
 	// Arrange.
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
@@ -67,4 +72,35 @@ func Test_GetUserById_ValidIdShouldGetUser(t *testing.T) {
 	if u.ID != targetId || err != nil || u.FirstName != "Tim" {
 		t.Errorf("Returned unknown result, u.FirstName: %s", u.FirstName)
 	}
+}
+
+func Test_UpdateUser_IdTooLowShouldError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange.
+	AddUser(User{0, "Joe", "Bloggs"})
+
+	// Act.
+	u, err := UpdateUser(User{0, "Simon", "Bloggs"})
+
+	// Assert.
+	if (u != User{} || err == nil) {
+		t.Error("Failed to validate user IDs below 1")
+	}
+}
+
+func NotTest_UpdateUser_UserFoundShouldUpdateValues(t *testing.T) {
+
+}
+
+func NotTest_UpdateUser_IdNotInRangeShouldError(t *testing.T) {
+
+}
+
+func NotTest_RemoveUserById_IdNotFoundShouldError(t *testing.T) {
+
+}
+
+func NotTest_RemoveUserById_RemovedUserShouldReturnNil(t *testing.T) {
+
 }
