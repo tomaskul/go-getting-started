@@ -6,7 +6,10 @@ import (
 
 func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
 	t.Parallel()
-	if GetUsers() != nil {
+
+	sut := NewUserPersistence()
+
+	if sut.GetUsers() != nil {
 		t.Error("Found users when none should be present")
 	}
 }
@@ -14,7 +17,13 @@ func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
 func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
 	t.Parallel()
 
-	_, err := AddUser(User{7, "FirstName", "Lastname"})
+	// Arrange.
+	sut := NewUserPersistence()
+
+	// Act.
+	_, err := sut.AddUser(User{7, "FirstName", "Lastname"})
+
+	// Assert.
 	if err == nil {
 		t.Error("User added when it shouldn't have")
 	}
@@ -23,10 +32,22 @@ func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
 func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
 	t.Parallel()
 
-	u, err := AddUser(User{0, "Joe", "Bloggs"})
+	// Arrange.
+	sut := NewUserPersistence()
 
-	if u.ID == 0 && err != nil && len(GetUsers()) != 1 {
+	// Act
+	u, err := sut.AddUser(User{0, "Joe", "Bloggs"})
+
+	// Assert.
+	if u.ID == 0 && err != nil && len(sut.GetUsers()) != 1 {
 		t.Error("User ID not set and/or error returned unexpectedly")
+	}
+}
+
+func Benchmark_AddUser(b *testing.B) {
+	sut := NewUserPersistence()
+	for i := 0; i < b.N; i++ {
+		sut.AddUser(User{0, "Joe", "Smith"})
 	}
 }
 
@@ -34,16 +55,17 @@ func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
 	t.Parallel()
 
 	// Arrange.
+	sut := NewUserPersistence()
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
 		{0, "Alice", "Bloggs"}}
 
 	for _, u := range inputUsers {
-		AddUser(*u)
+		sut.AddUser(*u)
 	}
 
 	// Act.
-	u, err := GetUserByID(7)
+	u, err := sut.GetUserByID(7)
 
 	// Assert.
 	if (u != User{} || err == nil) {
@@ -55,18 +77,19 @@ func Test_GetUserById_ValidIdShouldGetUser(t *testing.T) {
 	t.Parallel()
 
 	// Arrange.
+	sut := NewUserPersistence()
 	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
 		{0, "Tim", "Bloggs"},
 		{0, "Alice", "Bloggs"}}
 
 	for _, iu := range inputUsers {
-		AddUser(*iu)
+		sut.AddUser(*iu)
 	}
 
 	targetId := 2
 
 	// Act.
-	u, err := GetUserByID(targetId)
+	u, err := sut.GetUserByID(targetId)
 
 	// Assert.
 	if u.ID != targetId || err != nil || u.FirstName != "Tim" {
@@ -78,10 +101,11 @@ func Test_UpdateUser_IdTooLowShouldError(t *testing.T) {
 	t.Parallel()
 
 	// Arrange.
-	AddUser(User{0, "Joe", "Bloggs"})
+	sut := NewUserPersistence()
+	sut.AddUser(User{0, "Joe", "Bloggs"})
 
 	// Act.
-	u, err := UpdateUser(User{0, "Simon", "Bloggs"})
+	u, err := sut.UpdateUser(User{0, "Simon", "Bloggs"})
 
 	// Assert.
 	if (u != User{} || err == nil) {

@@ -11,16 +11,19 @@ type User struct {
 	LastName  string
 }
 
+type UserPersistence struct {
+}
+
 var (
 	users  []*User
 	nextID = 1
 )
 
-func GetUsers() []*User {
+func (up UserPersistence) GetUsers() []*User {
 	return users
 }
 
-func AddUser(u User) (User, error) {
+func (up UserPersistence) AddUser(u User) (User, error) {
 	if u.ID != 0 {
 		return User{}, errors.New("new User must not include ID")
 	}
@@ -30,7 +33,7 @@ func AddUser(u User) (User, error) {
 	return u, nil
 }
 
-func GetUserByID(id int) (User, error) {
+func (up UserPersistence) GetUserByID(id int) (User, error) {
 	for _, u := range users {
 		if u.ID == id {
 			return *u, nil
@@ -39,7 +42,7 @@ func GetUserByID(id int) (User, error) {
 	return User{}, fmt.Errorf("user with ID: '%v' not found", id)
 }
 
-func UpdateUser(u User) (User, error) {
+func (up UserPersistence) UpdateUser(u User) (User, error) {
 	if u.ID <= 0 {
 		return User{}, fmt.Errorf("supplied User with invalid ID: '%v'", u.ID)
 	}
@@ -53,7 +56,7 @@ func UpdateUser(u User) (User, error) {
 	return User{}, fmt.Errorf("user with ID: '%v' not found", u.ID)
 }
 
-func RemoveUserById(id int) error {
+func (up UserPersistence) RemoveUserById(id int) error {
 	for i, u := range users {
 		if u.ID == id {
 			users = append(users[:i], users[i+1:]...)
@@ -61,4 +64,8 @@ func RemoveUserById(id int) error {
 		}
 	}
 	return fmt.Errorf("user with ID: '%v' not found", id)
+}
+
+func NewUserPersistence() *UserPersistence {
+	return &UserPersistence{}
 }

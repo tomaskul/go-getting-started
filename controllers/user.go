@@ -11,6 +11,7 @@ import (
 
 type userController struct {
 	userIDPattern *regexp.Regexp
+	up            *models.UserPersistence
 }
 
 func (uc userController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +51,11 @@ func (uc userController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc userController) getAll(w http.ResponseWriter, r *http.Request) {
-	encodeResponseAsJSON(models.GetUsers(), w)
+	encodeResponseAsJSON(uc.up.GetUsers(), w)
 }
 
 func (uc userController) get(id int, w http.ResponseWriter) {
-	u, err := models.GetUserByID(id)
+	u, err := uc.up.GetUserByID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -70,7 +71,7 @@ func (uc userController) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err = models.AddUser(u)
+	u, err = uc.up.AddUser(u)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -92,7 +93,7 @@ func (uc userController) put(id int, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err = models.UpdateUser(u)
+	u, err = uc.up.UpdateUser(u)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -103,7 +104,7 @@ func (uc userController) put(id int, w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc userController) delete(id int, w http.ResponseWriter) {
-	err := models.RemoveUserById(id)
+	err := uc.up.RemoveUserById(id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -126,5 +127,6 @@ func (uc userController) parseRequestIntoUser(r *http.Request) (models.User, err
 func newUserController() *userController {
 	return &userController{
 		userIDPattern: regexp.MustCompile(`^/users/(\d+)/?`),
+		up:            models.NewUserPersistence(),
 	}
 }
