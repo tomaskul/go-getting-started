@@ -113,18 +113,78 @@ func Test_UpdateUser_IdTooLowShouldError(t *testing.T) {
 	}
 }
 
-func NotTest_UpdateUser_UserFoundShouldUpdateValues(t *testing.T) {
+func Test_UpdateUser_UserFoundShouldUpdateValues(t *testing.T) {
+	t.Parallel()
 
+	// Arrange.
+	sut := NewUserPersistence()
+	u, _ := sut.AddUser(User{0, "Joe", "Bloggs"})
+	newLastName := "Jamerson"
+
+	// Act.
+	u.LastName = newLastName
+	u2, err := sut.UpdateUser(u)
+
+	// Assert.
+	if (u2 == User{} || err != nil) {
+		t.Error("Failed to update user")
+	}
+	if u.FirstName != u2.FirstName || u2.LastName != newLastName ||
+		u.ID != u2.ID {
+		t.Error("Update failed")
+	}
 }
 
-func NotTest_UpdateUser_IdNotInRangeShouldError(t *testing.T) {
+func Test_UpdateUser_IdNotInRangeShouldError(t *testing.T) {
+	t.Parallel()
 
+	// Arrange.
+	sut := NewUserPersistence()
+	u1, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
+	sut.AddUser(User{0, "Bob", "Bloggs"})
+	u3, _ := sut.AddUser(User{0, "Cindy", "Bloggs"})
+
+	// Act.
+	u1.ID = u3.ID + 3
+	u1.FirstName = "Barbara"
+	u, err := sut.UpdateUser(u1)
+
+	// Assert.
+	if (u != User{} || err == nil) {
+		t.Error("Failed to validate user IDs below 1")
+	}
 }
 
-func NotTest_RemoveUserById_IdNotFoundShouldError(t *testing.T) {
+func Test_RemoveUserById_IdNotFoundShouldError(t *testing.T) {
+	t.Parallel()
 
+	// Arrange.
+	sut := NewUserPersistence()
+	inputUser, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
+
+	// Act.
+	err := sut.RemoveUserById(inputUser.ID + 78)
+
+	// Assert.
+	if err == nil {
+		t.Error("Removed user with non-existent ID.")
+	}
 }
 
-func NotTest_RemoveUserById_RemovedUserShouldReturnNil(t *testing.T) {
+func Test_RemoveUserById_RemovedUserShouldReturnNil(t *testing.T) {
+	t.Parallel()
 
+	// Arrange.
+	sut := NewUserPersistence()
+	user, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
+
+	// Act.
+	err := sut.RemoveUserById(user.ID)
+
+	// Assert.
+	u, err2 := sut.GetUserByID(user.ID)
+
+	if (err != nil || u != User{} || err2 == nil) {
+		t.Error("Failed to remove user by ID.")
+	}
 }
