@@ -1,190 +1,155 @@
-package models
+package models_test
 
 import (
 	"testing"
+
+	"github.com/tomaskul/go-getting-started/models"
 )
 
 func Test_GetUsers_UninitializedShouldBeNil(t *testing.T) {
-	t.Parallel()
-
-	sut := NewUserPersistence()
-
-	if sut.GetUsers() != nil {
+	if models.GetUsers() != nil {
 		t.Error("Found users when none should be present")
 	}
 }
 
-func Test_AddUser_SuppliedIdShouldError(t *testing.T) {
-	t.Parallel()
+func Test_AddUser(t *testing.T) {
 
-	// Arrange.
-	sut := NewUserPersistence()
+	t.Run("SuppliedIdShouldError", func(t *testing.T) {
+		// Act.
+		_, err := models.AddUser(models.User{7, "FirstName", "Lastname"})
 
-	// Act.
-	_, err := sut.AddUser(User{7, "FirstName", "Lastname"})
+		// Assert.
+		if err == nil {
+			t.Error("User added when it shouldn't have")
+		}
+	})
 
-	// Assert.
-	if err == nil {
-		t.Error("User added when it shouldn't have")
-	}
-}
+	t.Run("ValidInputShouldSucceed", func(t *testing.T) {
+		// Act
+		u, err := models.AddUser(models.User{0, "Joe", "Bloggs"})
 
-func Test_AddUser_ValidInputShouldSucceed(t *testing.T) {
-	t.Parallel()
+		// Assert.
+		if u.ID == 0 && u.ID != 1 && err != nil && len(models.GetUsers()) != 1 {
+			t.Error("User ID not set and/or error returned unexpectedly")
+		}
+	})
 
-	// Arrange.
-	sut := NewUserPersistence()
-
-	// Act
-	u, err := sut.AddUser(User{0, "Joe", "Bloggs"})
-
-	// Assert.
-	if u.ID == 0 && err != nil && len(sut.GetUsers()) != 1 {
-		t.Error("User ID not set and/or error returned unexpectedly")
-	}
+	// Tear-down.
+	models.Reset()
 }
 
 func Benchmark_AddUser(b *testing.B) {
-	sut := NewUserPersistence()
 	for i := 0; i < b.N; i++ {
-		sut.AddUser(User{0, "Joe", "Smith"})
+		models.AddUser(models.User{0, "Joe", "Smith"})
 	}
 }
 
 func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
-	t.Parallel()
-
 	// Arrange.
-	sut := NewUserPersistence()
-	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
-		{0, "Tim", "Bloggs"},
-		{0, "Alice", "Bloggs"}}
+	models.AddUser(models.User{0, "Jay", "Sloggs"})
+	models.AddUser(models.User{0, "Tim", "Ploggs"})
+	models.AddUser(models.User{0, "Alice", "Wloggs"})
 
-	for _, u := range inputUsers {
-		sut.AddUser(*u)
-	}
+	t.Run("UnknownIdShouldBeNil", func(t *testing.T) {
+		// Act.
+		u, err := models.GetUserByID(7)
 
-	// Act.
-	u, err := sut.GetUserByID(7)
+		// Assert.
+		if (u != models.User{} || err == nil) {
+			t.Error("Returned a user for unknown ID")
+		}
+	})
 
-	// Assert.
-	if (u != User{} || err == nil) {
-		t.Error("Returned a user for unknown ID")
-	}
+	t.Run("ValidIdShouldGetUser", func(t *testing.T) {
+		targetId := 2
+		// Act.
+		u, err := models.GetUserByID(targetId)
+
+		// Assert.
+		if u.ID != targetId || err != nil || u.FirstName != "Tim" {
+			t.Errorf("Returned unknown result, u: %v", u)
+		}
+	})
+
+	// Tear-down
+	models.Reset()
 }
 
-func Test_GetUserById_ValidIdShouldGetUser(t *testing.T) {
-	t.Parallel()
-
+func Test_UpdateUser(t *testing.T) {
 	// Arrange.
-	sut := NewUserPersistence()
-	var inputUsers = [...]*User{{0, "Joe", "Bloggs"},
-		{0, "Tim", "Bloggs"},
-		{0, "Alice", "Bloggs"}}
-
-	for _, iu := range inputUsers {
-		sut.AddUser(*iu)
-	}
-
-	targetId := 2
-
-	// Act.
-	u, err := sut.GetUserByID(targetId)
-
-	// Assert.
-	if u.ID != targetId || err != nil || u.FirstName != "Tim" {
-		t.Errorf("Returned unknown result, u.FirstName: %s", u.FirstName)
-	}
-}
-
-func Test_UpdateUser_IdTooLowShouldError(t *testing.T) {
-	t.Parallel()
-
-	// Arrange.
-	sut := NewUserPersistence()
-	sut.AddUser(User{0, "Joe", "Bloggs"})
-
-	// Act.
-	u, err := sut.UpdateUser(User{0, "Simon", "Bloggs"})
-
-	// Assert.
-	if (u != User{} || err == nil) {
-		t.Error("Failed to validate user IDs below 1")
-	}
-}
-
-func Test_UpdateUser_UserFoundShouldUpdateValues(t *testing.T) {
-	t.Parallel()
-
-	// Arrange.
-	sut := NewUserPersistence()
-	u, _ := sut.AddUser(User{0, "Joe", "Bloggs"})
+	u, _ := models.AddUser(models.User{0, "Joe", "Logs"})
 	newLastName := "Jamerson"
 
-	// Act.
-	u.LastName = newLastName
-	u2, err := sut.UpdateUser(u)
+	models.AddUser(models.User{0, "Bob", "Bloggs"})
+	u3, _ := models.AddUser(models.User{0, "Cindy", "Bloggs"})
 
-	// Assert.
-	if (u2 == User{} || err != nil) {
-		t.Error("Failed to update user")
-	}
-	if u.FirstName != u2.FirstName || u2.LastName != newLastName ||
-		u.ID != u2.ID {
-		t.Error("Update failed")
-	}
+	t.Run("IdTooLowShouldError", func(t *testing.T) {
+		// Act.
+		u, err := models.UpdateUser(models.User{0, "Simon", "Bloggs"})
+
+		// Assert.
+		if (u != models.User{} || err == nil) {
+			t.Error("Failed to validate user IDs below 1")
+		}
+	})
+
+	t.Run("UserFoundShouldUpdateValues", func(t *testing.T) {
+		// Act.
+		u.LastName = newLastName
+		u2, err := models.UpdateUser(u)
+
+		// Assert.
+		if (u2 == models.User{} || err != nil) {
+			t.Error("Failed to update user")
+		}
+		if u.FirstName != u2.FirstName || u2.LastName != newLastName ||
+			u.ID != u2.ID {
+			t.Error("Update failed")
+		}
+	})
+
+	t.Run("IdNotInRangeShouldError", func(t *testing.T) {
+		// Act.
+		u.ID = u3.ID + 3
+		u.FirstName = "Barbara"
+		u, err := models.UpdateUser(u)
+
+		// Assert.
+		if (u != models.User{} || err == nil) {
+			t.Error("Failed to validate user IDs below 1")
+		}
+	})
+
+	// Tear-down
+	models.Reset()
 }
 
-func Test_UpdateUser_IdNotInRangeShouldError(t *testing.T) {
-	t.Parallel()
-
+func Test_RemoveUserById(t *testing.T) {
 	// Arrange.
-	sut := NewUserPersistence()
-	u1, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
-	sut.AddUser(User{0, "Bob", "Bloggs"})
-	u3, _ := sut.AddUser(User{0, "Cindy", "Bloggs"})
+	inputUser, _ := models.AddUser(models.User{0, "Alice", "Bloggs"})
 
-	// Act.
-	u1.ID = u3.ID + 3
-	u1.FirstName = "Barbara"
-	u, err := sut.UpdateUser(u1)
+	t.Run("IdNotFoundShouldError", func(t *testing.T) {
+		// Act.
+		err := models.RemoveUserById(inputUser.ID + 78)
 
-	// Assert.
-	if (u != User{} || err == nil) {
-		t.Error("Failed to validate user IDs below 1")
-	}
-}
+		// Assert.
+		if err == nil {
+			t.Error("Removed user with non-existent ID.")
+		}
+	})
 
-func Test_RemoveUserById_IdNotFoundShouldError(t *testing.T) {
-	t.Parallel()
+	t.Run("RemovedUserShouldReturnNil", func(t *testing.T) {
+		// Act.
+		err := models.RemoveUserById(inputUser.ID)
 
-	// Arrange.
-	sut := NewUserPersistence()
-	inputUser, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
+		// Assert.
+		u, err2 := models.GetUserByID(inputUser.ID)
 
-	// Act.
-	err := sut.RemoveUserById(inputUser.ID + 78)
+		if (err != nil || u != models.User{} || err2 == nil) {
+			t.Error("Failed to remove user by ID.")
+		}
+	})
 
-	// Assert.
-	if err == nil {
-		t.Error("Removed user with non-existent ID.")
-	}
-}
-
-func Test_RemoveUserById_RemovedUserShouldReturnNil(t *testing.T) {
-	t.Parallel()
-
-	// Arrange.
-	sut := NewUserPersistence()
-	user, _ := sut.AddUser(User{0, "Alice", "Bloggs"})
-
-	// Act.
-	err := sut.RemoveUserById(user.ID)
-
-	// Assert.
-	u, err2 := sut.GetUserByID(user.ID)
-
-	if (err != nil || u != User{} || err2 == nil) {
-		t.Error("Failed to remove user by ID.")
-	}
+	// Tear-down
+	models.Reset()
 }
