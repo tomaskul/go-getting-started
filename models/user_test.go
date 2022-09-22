@@ -42,9 +42,11 @@ func Benchmark_AddUser(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		models.AddUser(models.User{0, "Joe", "Smith"})
 	}
+
+	models.Reset()
 }
 
-func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
+func Test_GetByUserId(t *testing.T) {
 	// Arrange.
 	models.AddUser(models.User{0, "Jay", "Sloggs"})
 	models.AddUser(models.User{0, "Tim", "Ploggs"})
@@ -73,6 +75,17 @@ func Test_GetByUserId_UnknownIdShouldBeNil(t *testing.T) {
 
 	// Tear-down
 	models.Reset()
+}
+
+func Benchmark_GetByUserId(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		models.AddUser(models.User{0, "Joe", "Smith"})
+	}
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		models.GetUserByID(i)
+	}
 }
 
 func Test_UpdateUser(t *testing.T) {
